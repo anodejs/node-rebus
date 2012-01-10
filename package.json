@@ -1,6 +1,6 @@
 {
     "name": "rebus",
-    "description": "REBUS - reactive. Pub/Sub bus for sharing data between nodejs applications running on the same host",
+    "description": "rebus - reactive Pub/Sub bus for sharing data between nodejs applications running on the same host",
     "main": "./main",
     "bin": { },
     "author": "anode <anode@microsoft.com>",

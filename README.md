@@ -1,4 +1,4 @@
-# rebus - Reactive Bus
+# rebus - Reactive Pub/Sub Bus
 
 [![Build Status](https://secure.travis-ci.org/anodejs/node-rebus.png)](http://travis-ci.org/anodejs/node-rebus)
 
