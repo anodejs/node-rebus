@@ -6,7 +6,7 @@ var rebus = require('../lib/rebus');
 module.exports = testCase({
 
     setUp: function (callback) {
-        this.folder = path.join(process.env.TMP || process.env.TMPDIR, Math.round(Math.random() * 100000).toString());
+        this.folder = path.join(process.env.TMP || process.env.TMPDIR, 'rebus', Math.round(Math.random() * 100000).toString());
         console.log('Folder:' + this.folder);
         callback();
     },
