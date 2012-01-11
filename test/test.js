@@ -18,7 +18,7 @@ module.exports = testCase({
     },
 
     // Just adhoc scenario used during development.
-    adhock: function (test) {
+    adhoc: function (test) {
         var self = this;
         rebus.start(self.folder, function (err, rebus1) {
             console.log('started rebus1');
