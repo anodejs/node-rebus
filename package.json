@@ -1,51 +1,42 @@
 {
-    "name": "rebus",
-    "description": "rebus - reactive Pub/Sub bus for sharing data between nodejs applications running on the same host",
-    "main": "./main",
-    "bin": { },
-    "author": "anode <anode@microsoft.com>",
-    "version": "0.0.1",
-    "license": "MIT",
-    "contributors": [
-        {
-            "name": "Yosef Dinerstein",
-            "email": "yosefd@microsoft.com"
-        },
-        {
-            "name": "Elad Ben-Israel",
-            "email": "eladb@microsoft.com"
-        },
-        {
-            "name": "Saar Yahalom",
-            "email": "saary@microsoft.com"
-        }
-    ],
-    "keywords" : [
-        "nodejs",
-        "bus",
-        "pub/sub",
-        "publish",
-        "subscribe",
-        "notification",
-        "producer",
-        "consumer"
-    ],
-    "engines": {
-        "node": "~0.6.6"
-    },
-    "dependencies": {
-        "async": "0.1.x",
-        "mkdirp": "0.2.x"
-    },
-    "devDependencies": {
-        "nodeunit": "0.6.x",
-        "rimraf": "1.0.x"
-    },
-    "repository": {
-        "type": "git",
-        "url": "http://github.com/anodejs/node-rebus"
-    },
-    "scripts": {
-        "test": "nodeunit test/test.js"
-    }
+  "name": "rebus",
+  "description": "rebus - reactive Pub/Sub bus for sharing data between nodejs applications running on the same host",
+  "main": "./main",
+  "bin": {},
+  "author": "anode <anode@microsoft.com>",
+  "version": "0.0.1",
+  "license": "MIT",
+  "contributors": [
+    "Yosef Dinerstein <yosefd@microsoft.com>",
+    "Elad Ben-Israel <eladb@microsoft.com>",
+    "Saar Yahalom <saary@microsoft.com>"
+  ],
+  "keywords": [
+    "nodejs",
+    "bus",
+    "pub/sub",
+    "publish",
+    "subscribe",
+    "notification",
+    "producer",
+    "consumer"
+  ],
+  "engines": {
+    "node": "~0.6.6"
+  },
+  "dependencies": {
+    "async": "0.1.x",
+    "mkdirp": "0.2.x"
+  },
+  "devDependencies": {
+    "nodeunit": "0.6.x",
+    "rimraf": "1.0.x"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/anodejs/node-rebus.git"
+  },
+  "scripts": {
+    "test": "nodeunit test/test.js"
+  }
 }
