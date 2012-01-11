@@ -52,7 +52,6 @@ module.exports = testCase({
                         console.log('Notification from rebus1 for x.k.a.f1:', obj);
                         xkaf1 = obj;
                     });
-                    console.log('notification3:', notification3);
                     // start again and see the published object in there.
                     rebus.start(self.folder, function (err, rebus2) {
                         console.log('started rebus2');
