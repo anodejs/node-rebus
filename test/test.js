@@ -6,7 +6,7 @@ var rebus = require('../lib/rebus');
 module.exports = testCase({
 
     setUp: function (callback) {
-        this.folder = path.join(process.env.TMP || process.env.TMPDIR, Math.round(Math.random() * 100000).toString());
+        this.folder = path.join(process.env.TMP || process.env.TMPDIR, 'rebus', Math.round(Math.random() * 100000).toString());
         console.log('Folder:' + this.folder);
         callback();
     },
@@ -17,8 +17,8 @@ module.exports = testCase({
         });
     },
 
-    // Just adhock scenario used during development.
-    adhock: function (test) {
+    // Just adhoc scenario used during development.
+    adhoc: function (test) {
         var self = this;
         rebus.start(self.folder, function (err, rebus1) {
             console.log('started rebus1');
@@ -52,7 +52,6 @@ module.exports = testCase({
                         console.log('Notification from rebus1 for x.k.a.f1:', obj);
                         xkaf1 = obj;
                     });
-                    console.log('notification3:', notification3);
                     // start again and see the published object in there.
                     rebus.start(self.folder, function (err, rebus2) {
                         console.log('started rebus2');
