@@ -94,43 +94,43 @@ module.exports = testCase({
                 console.log('notification3 p1:', obj);
                 obj3 = obj;
             });
-            rebus1.subscribe('p1', function (obj, handler1) {
+            var handler1 = rebus1.subscribe('p1', function (obj) {
                 console.log('notification1 p1:', obj);
-                if (handler1) {
-                    // The 1st notification.
-                    test.deepEqual(obj, {}, 'should receive empty object if nothing was published');
-                    handler1.dispose();
-                    rebus1.publish('p1', 'something1', function (err) {
-                        test.ok(!err, 'failed to publish');
-                        rebus.start(self.folder, function (err, rebus2) {
-                            test.ok(!err, 'failed to start non-empty instance');
-                            test.ok(rebus2, 'got the 2nd rebus instance');
-                            var obj4;
-                            var handler4 = rebus2.subscribe('p1', function (obj) {
-                                console.log('notification4 p1:', obj);
-                                obj4 = obj;
-                            });
-                            rebus2.subscribe('p1', function (obj, handler2) {
-                                console.log('notification2 p1:', obj);
-                                if (handler2) {
-                                    // The 1st notificaiton.
-                                    test.equal(obj, 'something1');
-                                    handler2.dispose();
-                                    setTimeout(function () {
-                                        // Check eventual consistency.
-                                        test.equal(obj3, 'something1');
-                                        test.equal(obj4, 'something1');
-                                        // dispose only one of handlers and leave the other not disposed.
-                                        handler3.dispose();
-                                        rebus2.stop();
-                                        rebus1.stop();
-                                        test.done();
-                                    }, 200);
-                                }
-                            });
+                test.deepEqual(obj, {}, 'should receive empty object if nothing was published');
+                test.ok(handler1, 'handler should be set when notification is called');
+                handler1.dispose();
+                // No more notifications should arrive from handler1 after dispose.
+                handler1 = null;
+                rebus1.publish('p1', 'something1', function (err) {
+                    test.ok(!err, 'failed to publish');
+                    rebus.start(self.folder, function (err, rebus2) {
+                        test.ok(!err, 'failed to start non-empty instance');
+                        test.ok(rebus2, 'got the 2nd rebus instance');
+                        var obj4;
+                        var handler4 = rebus2.subscribe('p1', function (obj) {
+                            console.log('notification4 p1:', obj);
+                            obj4 = obj;
+                        });
+                        var handler2 = rebus2.subscribe('p1', function (obj) {
+                            console.log('notification2 p1:', obj);
+                            test.ok(handler2, 'handler should be set when notification is called');
+                            test.equal(obj, 'something1');
+                            handler2.dispose();
+                            // No more notifications should arrive from handler2 after dispose.
+                            handler2 = null;
+                            setTimeout(function () {
+                                // Check eventual consistency.
+                                test.equal(obj3, 'something1');
+                                test.equal(obj4, 'something1');
+                                // dispose only one of handlers and leave the other not disposed.
+                                handler3.dispose();
+                                rebus2.stop();
+                                rebus1.stop();
+                                test.done();
+                            }, 200);
                         });
                     });
-                }
+                });
             });
         });
     },
