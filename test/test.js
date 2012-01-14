@@ -1,7 +1,7 @@
 ﻿var testCase = require('nodeunit').testCase;
 var path = require('path');
 var rimraf = require('rimraf');
-var rebus = require('../lib/rebus');
+var rebusFactory = require('../lib/rebus');
 
 module.exports = testCase({
 
@@ -20,7 +20,7 @@ module.exports = testCase({
     // Just adhoc scenario used during development.
     adhoc: function (test) {
         var self = this;
-        rebus.start(self.folder, function (err, rebus1) {
+        var handle1 = rebusFactory(self.folder, function (err, rebus1) {
             console.log('started rebus1');
             test.ok(!err, 'failed to start the 1st rebus instance');
             if (!rebus1) {
@@ -53,7 +53,7 @@ module.exports = testCase({
                         xkaf1 = obj;
                     });
                     // start again and see the published object in there.
-                    rebus.start(self.folder, function (err, rebus2) {
+                    var handle2 = rebusFactory(self.folder, function (err, rebus2) {
                         console.log('started rebus2');
                         test.ok(!err, 'cannot start another instance of rebus');
                         console.log('going to change x.k.a');
@@ -72,8 +72,8 @@ module.exports = testCase({
                                 notification3.dispose();
                                 notification2.dispose();
                                 notification1.dispose();
-                                rebus2.stop();
-                                rebus1.stop();
+                                handle2.close();
+                                handle1.close();
                                 test.done();
                             }, 200);
                         });
@@ -86,7 +86,7 @@ module.exports = testCase({
     // Publish and subscribe simple object on depth 1.
     firstLevel: function (test) {
         var self = this;
-        rebus.start(self.folder, function (err, rebus1) {
+        var handle1 = rebusFactory(self.folder, function (err, rebus1) {
             test.ok(!err, 'failed to start empty instance');
             test.ok(rebus1, 'got the 1st rebus instance');
             var obj3;
@@ -103,7 +103,7 @@ module.exports = testCase({
                 handler1 = null;
                 rebus1.publish('p1', 'something1', function (err) {
                     test.ok(!err, 'failed to publish');
-                    rebus.start(self.folder, function (err, rebus2) {
+                    var handle2 = rebusFactory(self.folder, function (err, rebus2) {
                         test.ok(!err, 'failed to start non-empty instance');
                         test.ok(rebus2, 'got the 2nd rebus instance');
                         var obj4;
@@ -124,8 +124,8 @@ module.exports = testCase({
                                 test.equal(obj4, 'something1');
                                 // dispose only one of handlers and leave the other not disposed.
                                 handler3.dispose();
-                                rebus2.stop();
-                                rebus1.stop();
+                                handle2.close();
+                                handle1.close();
                                 test.done();
                             }, 200);
                         });
@@ -138,7 +138,7 @@ module.exports = testCase({
     // Check notifications are called for a subtree of changed object.
     subtreeNotifications: function (test) {
         var self = this;
-        rebus.start(self.folder, function (err, rebus1) {
+        var handle1 = rebusFactory(self.folder, function (err, rebus1) {
             test.ok(!err, 'failed to start empty instance');
             test.ok(rebus1, 'got the 1st rebus instance');
             var ab1c1;
@@ -194,7 +194,7 @@ module.exports = testCase({
                 test.deepEqual(ab2, { c4: 'l4', c5: 'l5' });
                 test.deepEqual(a, { b1: { c1: 'l1', c2: 'l2' }, b2: { c4: 'l4', c5: 'l5'} });
                 test.ok(!ab1c1d1, 'Not part of the object');
-                rebus1.stop();
+                handle1.close();
                 test.done();
             }, 200);
         });
