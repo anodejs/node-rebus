@@ -80,9 +80,9 @@ module.exports = testCase({
                                 test.deepEqual(rebus1.value, { x: { k: { a: { f3: 'junk' }, b: { f2: 'muku'}}} });
                                 test.deepEqual(rebus2.value, { x: { k: { a: { f3: 'junk' }, b: { f2: 'muku'}}} });
                                 console.log('commence tear down');
-                                notification3.dispose();
-                                notification2.dispose();
-                                notification1.dispose();
+                                notification3.close();
+                                notification2.close();
+                                notification1.close();
                                 rebus2.close();
                                 rebus1.close();
                                 test.done();
@@ -101,40 +101,40 @@ module.exports = testCase({
             test.ok(!err, 'failed to start empty instance');
             test.ok(rebus1, 'got the 1st rebus instance');
             var obj3;
-            var handler3 = rebus1.subscribe('p1', function (obj) {
+            var notification3 = rebus1.subscribe('p1', function (obj) {
                 console.log('notification3 p1:', obj);
                 obj3 = obj;
             });
-            var handler1 = rebus1.subscribe('p1', function (obj) {
+            var notification1 = rebus1.subscribe('p1', function (obj) {
                 console.log('notification1 p1:', obj);
                 test.deepEqual(obj, {}, 'should receive empty object if nothing was published');
-                test.ok(handler1, 'handler should be set when notification is called');
-                handler1.dispose();
-                // No more notifications should arrive from handler1 after dispose.
-                handler1 = null;
+                test.ok(notification1, 'notification should be set when notification is called');
+                notification1.close();
+                // No more notifications should arrive from notification1 after close.
+                notification1 = null;
                 rebus1.publish('p1', 'something1', function (err) {
                     test.ok(!err, 'failed to publish');
                     var rebus2 = rebusFactory(self.folder, function (err) {
                         test.ok(!err, 'failed to start non-empty instance');
                         test.ok(rebus2, 'got the 2nd rebus instance');
                         var obj4;
-                        var handler4 = rebus2.subscribe('p1', function (obj) {
+                        var notification4 = rebus2.subscribe('p1', function (obj) {
                             console.log('notification4 p1:', obj);
                             obj4 = obj;
                         });
-                        var handler2 = rebus2.subscribe('p1', function (obj) {
+                        var notification2 = rebus2.subscribe('p1', function (obj) {
                             console.log('notification2 p1:', obj);
-                            test.ok(handler2, 'handler should be set when notification is called');
+                            test.ok(notification2, 'notification should be set when notification is called');
                             test.equal(obj, 'something1');
-                            handler2.dispose();
-                            // No more notifications should arrive from handler2 after dispose.
-                            handler2 = null;
+                            notification2.close();
+                            // No more notifications should arrive from notification2 after close.
+                            notification2 = null;
                             setTimeout(function () {
                                 // Check eventual consistency.
                                 test.equal(obj3, 'something1');
                                 test.equal(obj4, 'something1');
-                                // dispose only one of handlers and leave the other not disposed.
-                                handler3.dispose();
+                                // close only one of notifications and leave the other not closed.
+                                notification3.close();
                                 rebus2.close();
                                 rebus1.close();
                                 test.done();
@@ -231,12 +231,12 @@ module.exports = testCase({
         var self = this;
         var rebus1 = rebusFactory(self.folder);
         rebus1.publish('a.b', { c1: 'x', c2: 'y' }, function (err) {
-            var handler1 = rebus1.subscribe('a', function (obj) {
+            var notification1 = rebus1.subscribe('a', function (obj) {
                 try {
                     var rebus2 = rebusFactory(self.folder);
                     test.deepEqual(rebus2.value, { a: { b: { c1: 'x', c2: 'y'}} });
                     // If got here, rebus should be loaded successfully.
-                    handler1.dispose();
+                    notification1.close();
                     rebus1.close();
                     rebus2.close();
                     test.done();
