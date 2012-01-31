@@ -1,6 +1,7 @@
 ﻿var testCase = require('nodeunit').testCase;
 var path = require('path');
 var rimraf = require('rimraf');
+var mkdirp = require('mkdirp');
 var rebusFactory = require('../lib/rebus');
 
 module.exports = testCase({
@@ -8,7 +9,7 @@ module.exports = testCase({
     setUp: function (callback) {
         this.folder = path.join(process.env.TMP || process.env.TMPDIR, 'rebus', Math.round(Math.random() * 100000).toString());
         console.log('Folder:' + this.folder);
-        callback();
+        mkdirp(this.folder, callback);
     },
 
     tearDown: function (callback) {
@@ -17,10 +18,17 @@ module.exports = testCase({
         });
     },
 
+    missingfolder: function (test) {
+        var rebus = rebusFactory('nosuchfoler', function (err) {
+            test.ok(err);
+            test.done();
+        });
+    },
+
     // Just adhoc scenario used during development.
     adhoc: function (test) {
         var self = this;
-        var handle1 = rebusFactory(self.folder, function (err, rebus1) {
+        var rebus1 = rebusFactory(self.folder, function (err) {
             console.log('started rebus1');
             test.ok(!err, 'failed to start the 1st rebus instance');
             if (!rebus1) {
@@ -53,7 +61,7 @@ module.exports = testCase({
                         xkaf1 = obj;
                     });
                     // start again and see the published object in there.
-                    var handle2 = rebusFactory(self.folder, function (err, rebus2) {
+                    var rebus2 = rebusFactory(self.folder, function (err) {
                         console.log('started rebus2');
                         test.ok(!err, 'cannot start another instance of rebus');
                         console.log('going to change x.k.a');
@@ -64,16 +72,19 @@ module.exports = testCase({
                                 console.log('xk:', xk);
                                 console.log('xkbf2:', xkbf2);
                                 console.log('xkaf1:', xkaf1);
+                                console.log('value:', JSON.stringify(rebus2.value));
                                 // verify final state of the objects
                                 test.ok(!xkaf1, 'x.k.a.f1 was deleted and hence not defined');
                                 test.equal(xkbf2, 'muku');
                                 test.deepEqual(xk, { a: { f3: 'junk' }, b: { f2: 'muku'} });
+                                test.deepEqual(rebus1.value, { x: { k: { a: { f3: 'junk' }, b: { f2: 'muku'}}} });
+                                test.deepEqual(rebus2.value, { x: { k: { a: { f3: 'junk' }, b: { f2: 'muku'}}} });
                                 console.log('commence tear down');
                                 notification3.dispose();
                                 notification2.dispose();
                                 notification1.dispose();
-                                handle2.close();
-                                handle1.close();
+                                rebus2.close();
+                                rebus1.close();
                                 test.done();
                             }, 200);
                         });
@@ -86,7 +97,7 @@ module.exports = testCase({
     // Publish and subscribe simple object on depth 1.
     firstLevel: function (test) {
         var self = this;
-        var handle1 = rebusFactory(self.folder, function (err, rebus1) {
+        var rebus1 = rebusFactory(self.folder, function (err) {
             test.ok(!err, 'failed to start empty instance');
             test.ok(rebus1, 'got the 1st rebus instance');
             var obj3;
@@ -103,7 +114,7 @@ module.exports = testCase({
                 handler1 = null;
                 rebus1.publish('p1', 'something1', function (err) {
                     test.ok(!err, 'failed to publish');
-                    var handle2 = rebusFactory(self.folder, function (err, rebus2) {
+                    var rebus2 = rebusFactory(self.folder, function (err) {
                         test.ok(!err, 'failed to start non-empty instance');
                         test.ok(rebus2, 'got the 2nd rebus instance');
                         var obj4;
@@ -124,8 +135,8 @@ module.exports = testCase({
                                 test.equal(obj4, 'something1');
                                 // dispose only one of handlers and leave the other not disposed.
                                 handler3.dispose();
-                                handle2.close();
-                                handle1.close();
+                                rebus2.close();
+                                rebus1.close();
                                 test.done();
                             }, 200);
                         });
@@ -138,51 +149,51 @@ module.exports = testCase({
     // Check notifications are called for a subtree of changed object.
     subtreeNotifications: function (test) {
         var self = this;
-        var handle1 = rebusFactory(self.folder, function (err, rebus1) {
+        var rebus = rebusFactory(self.folder, function (err) {
             test.ok(!err, 'failed to start empty instance');
-            test.ok(rebus1, 'got the 1st rebus instance');
+            test.ok(rebus, 'got the 1st rebus instance');
             var ab1c1;
-            rebus1.subscribe('a.b1.c1', function (obj) {
+            rebus.subscribe('a.b1.c1', function (obj) {
                 console.log('a.b1.c1:', obj);
                 ab1c1 = obj;
             });
             var ab1c2;
-            rebus1.subscribe('a.b1.c2', function (obj) {
+            rebus.subscribe('a.b1.c2', function (obj) {
                 console.log('a.b1.c2:', obj);
                 ab1c2 = obj;
             });
             var ab2c3;
-            rebus1.subscribe('a.b2.c3', function (obj) {
+            rebus.subscribe('a.b2.c3', function (obj) {
                 console.log('a.b2.c3:', obj);
                 ab2c3 = obj;
             });
             var ab2c4;
-            rebus1.subscribe('a.b2.c4', function (obj) {
+            rebus.subscribe('a.b2.c4', function (obj) {
                 console.log('a.b2.c4:', obj);
                 ab2c4 = obj;
             });
             var ab1;
-            rebus1.subscribe('a.b1', function (obj) {
+            rebus.subscribe('a.b1', function (obj) {
                 console.log('a.b1:', obj);
                 ab1 = obj;
             });
             var ab2;
-            rebus1.subscribe('a.b2', function (obj) {
+            rebus.subscribe('a.b2', function (obj) {
                 console.log('a.b2:', obj);
                 ab2 = obj;
             });
             var a;
-            rebus1.subscribe('a', function (obj) {
+            rebus.subscribe('a', function (obj) {
                 console.log('a:', obj);
                 a = obj;
             });
             var ab1c1d1;
-            rebus1.subscribe('a.b1.c1.d1', function (obj) {
+            rebus.subscribe('a.b1.c1.d1', function (obj) {
                 console.log('a.b1.c1.d1:', obj);
                 ab1c1d1 = obj;
             });
-            rebus1.publish('a.b1', { c1: 'l1', c2: 'l2' });
-            rebus1.publish('a.b2', { c4: 'l4', c5: 'l5' });
+            rebus.publish('a.b1', { c1: 'l1', c2: 'l2' });
+            rebus.publish('a.b2', { c4: 'l4', c5: 'l5' });
 
             setTimeout(function () {
                 // Validate eventual consistency.
@@ -194,9 +205,46 @@ module.exports = testCase({
                 test.deepEqual(ab2, { c4: 'l4', c5: 'l5' });
                 test.deepEqual(a, { b1: { c1: 'l1', c2: 'l2' }, b2: { c4: 'l4', c5: 'l5'} });
                 test.ok(!ab1c1d1, 'Not part of the object');
-                handle1.close();
+                rebus.close();
                 test.done();
             }, 200);
+        });
+    },
+
+    sync1: function (test) {
+        var self = this;
+        var rebus1 = rebusFactory(self.folder);
+        rebus1.publish('a.b', { c1: 'x', c2: 'y' });
+        rebus1.close();
+        // Give grace period for fs to really write the file.
+        setTimeout(function () {
+            // Here goes synchronous usage.
+            var rebus2 = rebusFactory(self.folder);
+            test.deepEqual(rebus2.value.a.b, { c1: 'x', c2: 'y' });
+            test.deepEqual(rebus2.value, { a: { b: { c1: 'x', c2: 'y'}} });
+            rebus2.close();
+            test.done();
+        }, 200);
+    },
+
+    sync2: function (test) {
+        var self = this;
+        var rebus1 = rebusFactory(self.folder);
+        rebus1.publish('a.b', { c1: 'x', c2: 'y' }, function (err) {
+            var handler1 = rebus1.subscribe('a', function (obj) {
+                try {
+                    var rebus2 = rebusFactory(self.folder);
+                    test.deepEqual(rebus2.value, { a: { b: { c1: 'x', c2: 'y'}} });
+                    // If got here, rebus should be loaded successfully.
+                    handler1.dispose();
+                    rebus1.close();
+                    rebus2.close();
+                    test.done();
+                }
+                catch (e) {
+                    console.log('exception on instantiating sync rebus:', e);
+                }
+            });
         });
     }
 });
