@@ -278,6 +278,7 @@ module.exports = testCase({
                 test.done();
             }
             catch (e) {
+                // No problem. More notifications will come.
                 console.log('exception on instantiating sync rebus:', e);
                 // This instance of rebus was not loaded. Save it, to close later.
                 rebuses.push(rebus2);
