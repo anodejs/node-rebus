@@ -4,7 +4,7 @@
   "main": "./main",
   "bin": {},
   "author": "anode <anode@microsoft.com>",
-  "version": "0.2.1",
+  "version": "0.4.0",
   "license": "MIT",
   "contributors": [
     "Yosef Dinerstein <yosefd@microsoft.com>",
@@ -26,12 +26,12 @@
   },
   "dependencies": {
     "async": "0.1.x",
-    "mkdirp": "0.2.x",
-    "ypatterns": "0.0.x"
+    "ypatterns": "0.2.x"
   },
   "devDependencies": {
     "nodeunit": "0.6.x",
-    "rimraf": "1.0.x"
+    "mkdirp": "0.2.x",
+    "rimraf": "2.0.x"
   },
   "repository": {
     "type": "git",
