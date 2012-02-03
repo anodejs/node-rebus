@@ -268,21 +268,22 @@ module.exports = testCase({
             try {
                 rebus2 = rebus(self.folder);
                 test.deepEqual(rebus2.value, { a: { b: { c1: 'x', c2: 'y'}} });
-                // If got here, rebus should be loaded successfully.
-                notification1.close();
-                rebus1.close();
-                rebus2.close();
-                // Close all instances that failed to initialize due to transient state.
-                // They can be initialized without exception now.
-                rebuses.forEach(function (r) { r.close(); });
-                test.done();
             }
             catch (e) {
                 // No problem. More notifications will come.
                 console.log('exception on instantiating sync rebus:', e);
                 // This instance of rebus was not loaded. Save it, to close later.
                 rebuses.push(rebus2);
+                return;
             }
+            // If got here, rebus should be loaded successfully.
+            notification1.close();
+            rebus1.close();
+            rebus2.close();
+            // Close all instances that failed to initialize due to transient state.
+            // They can be initialized without exception now.
+            rebuses.forEach(function (r) { r.close(); });
+            test.done();
         });
         rebus1.publish('a.b', { c1: 'x', c2: 'y' });
     }
