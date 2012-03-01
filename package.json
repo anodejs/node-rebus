@@ -25,7 +25,8 @@
     "node": "~0.6.x"
   },
   "dependencies": {
-    "async": "0.1.x"
+    "async": "0.1.x",
+    "ypatterns": 0.2.x
   },
   "devDependencies": {
     "nodeunit": "0.6.x",
