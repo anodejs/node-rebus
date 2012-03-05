@@ -28,7 +28,7 @@ module.exports = testCase({
     // Just adhoc scenario used during development.
     adhoc: function (test) {
         var self = this;
-        var rebus1 = rebus(self.folder, function (err) {
+        var rebus1 = rebus(self.folder, { singletons: false }, function (err) {
             console.log('started rebus1');
             test.ok(!err, 'failed to start the 1st rebus instance');
             if (!rebus1) {
@@ -61,7 +61,7 @@ module.exports = testCase({
                         xkaf1 = obj;
                     });
                     // start again and see the published object in there.
-                    var rebus2 = rebus(self.folder, function (err) {
+                    var rebus2 = rebus(self.folder, { singletons: false }, function (err) {
                         console.log('started rebus2');
                         test.ok(!err, 'cannot start another instance of rebus');
                         console.log('going to change x.k.a');
@@ -97,7 +97,7 @@ module.exports = testCase({
     // Publish and subscribe simple object on depth 1.
     firstLevel: function (test) {
         var self = this;
-        var rebus1 = rebus(self.folder, function (err) {
+        var rebus1 = rebus(self.folder, { singletons: false }, function (err) {
             test.ok(!err, 'failed to start empty instance');
             test.ok(rebus1, 'got the 1st rebus instance');
             var obj3;
@@ -114,7 +114,7 @@ module.exports = testCase({
                 notification1 = null;
                 rebus1.publish('p1', 'something1', function (err) {
                     test.ok(!err, 'failed to publish');
-                    var rebus2 = rebus(self.folder, function (err) {
+                    var rebus2 = rebus(self.folder, { singletons: false }, function (err) {
                         test.ok(!err, 'failed to start non-empty instance');
                         test.ok(rebus2, 'got the 2nd rebus instance');
                         var obj4;
@@ -213,13 +213,13 @@ module.exports = testCase({
 
     sync1: function (test) {
         var self = this;
-        var rebus1 = rebus(self.folder);
+        var rebus1 = rebus(self.folder, { singletons: false });
         rebus1.publish('a.b', { c1: 'x', c2: 'y' });
         rebus1.close();
         // Give grace period for fs to really write the file.
         setTimeout(function () {
             // Here goes synchronous usage.
-            var rebus2 = rebus(self.folder);
+            var rebus2 = rebus(self.folder, { singletons: false });
             test.deepEqual(rebus2.value.a.b, { c1: 'x', c2: 'y' });
             test.deepEqual(rebus2.value, { a: { b: { c1: 'x', c2: 'y'}} });
             rebus2.close();
@@ -229,11 +229,11 @@ module.exports = testCase({
 
     sync2: function (test) {
         var self = this;
-        var rebus1 = rebus(self.folder);
+        var rebus1 = rebus(self.folder, { singletons: false });
         rebus1.publish('a.b', { c1: 'x', c2: 'y' }, function (err) {
             var notification1 = rebus1.subscribe('a', function (obj) {
                 try {
-                    var rebus2 = rebus(self.folder);
+                    var rebus2 = rebus(self.folder, { singletons: false });
                     test.deepEqual(rebus2.value, { a: { b: { c1: 'x', c2: 'y'}} });
                     // If got here, rebus should be loaded successfully.
                     notification1.close();
@@ -257,32 +257,48 @@ module.exports = testCase({
         test.done();
     },
 
+    singleton: function (test) {
+        var self = this;
+        var folder = path.join(__dirname, 'testRebus');
+        var rebus1 = rebus(folder, function (err) {
+            test.ok(!err, 'shold get rebus instance');
+            var rebus2 = rebus(folder);
+            test.ok(rebus1 === rebus2, 'should be the same instance for the same folder');
+            test.deepEqual(rebus2.value, { a: { b: { c1: 'x', c2: 'y'} }, c: { d: {}} });
+            rebus1.close();
+            // The 2nd close should do nothing.
+            rebus2.close();
+            test.done();
+        });
+    },
+
     // Should be a notification when the rebus in consistent state, even there are some
     // notifications while the state is transient.
     consistentNotificaiton: function (test) {
         var self = this;
-        var rebus1 = rebus(self.folder);
+        var rebus1 = rebus(self.folder, { singletons: false });
         var rebuses = [];
         var notification1 = rebus1.subscribe('a', function (obj) {
             var rebus2;
             try {
-                rebus2 = rebus(self.folder);
+                rebus2 = rebus(self.folder, { singletons: false });
                 test.deepEqual(rebus2.value, { a: { b: { c1: 'x', c2: 'y'}} });
-                // If got here, rebus should be loaded successfully.
-                notification1.close();
-                rebus1.close();
-                rebus2.close();
-                // Close all instances that failed to initialize due to transient state.
-                // They can be initialized without exception now.
-                rebuses.forEach(function (r) { r.close(); });
-                test.done();
             }
             catch (e) {
                 // No problem. More notifications will come.
                 console.log('exception on instantiating sync rebus:', e);
                 // This instance of rebus was not loaded. Save it, to close later.
                 rebuses.push(rebus2);
+                return;
             }
+            // If got here, rebus should be loaded successfully.
+            notification1.close();
+            rebus1.close();
+            rebus2.close();
+            // Close all instances that failed to initialize due to transient state.
+            // They can be initialized without exception now.
+            rebuses.forEach(function (r) { r.close(); });
+            test.done();
         });
         rebus1.publish('a.b', { c1: 'x', c2: 'y' });
     }
