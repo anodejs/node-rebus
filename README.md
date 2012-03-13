@@ -41,7 +41,7 @@ var bus = rebus(directoryName, function(err) {
   // Publish an object.
   bus.publish(
     'some.other.name.space',
-    { x: 'this', y: ['is', 'some', object'] },
+    { x: 'this', y: ['is', 'some', 'object'] },
     function(err) {
      console.log(
        'published some other object and its value now:',
