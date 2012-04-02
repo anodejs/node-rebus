@@ -2,6 +2,7 @@
 var path = require('path');
 var rimraf = require('rimraf');
 var mkdirp = require('mkdirp');
+var fs = require('fs');
 var rebus = require('../lib/rebus');
 
 module.exports = testCase({
@@ -19,7 +20,7 @@ module.exports = testCase({
   },
 
   missingfolder: function (test) {
-    var rebusNoFolder = rebus('nosuchfoler', function (err) {
+    var rebusNoFolder = rebus('nosuchfolder', function (err) {
       test.ok(err);
       test.done();
     });
@@ -261,7 +262,7 @@ module.exports = testCase({
     var self = this;
     var folder = path.join(__dirname, 'testRebus');
     var rebus1 = rebus(folder, function (err) {
-      test.ok(!err, 'shold get rebus instance');
+      test.ok(!err, 'should get rebus instance');
       var rebus2 = rebus(folder);
       test.ok(rebus1 === rebus2, 'should be the same instance for the same folder');
       test.deepEqual(rebus2.value, { a: { b: { c1: 'x', c2: 'y'} }, c: { d: {}} });
@@ -301,5 +302,35 @@ module.exports = testCase({
       test.done();
     });
     rebus1.publish('a.b', { c1: 'x', c2: 'y' });
+  },
+
+  loaderIncompleteFile: function (test) {
+    var self = this;
+    var value = '{ "a": 1';
+    var loaded = false;
+    var completed = 0;
+    function complete() {
+      if (++completed === 2) {
+        test.done();
+      }
+    }
+    fs.writeFile(path.join(self.folder, 'b.json'), value, function (err) {
+      test.ok(!err, 'should write partial file');
+      var rebusT = rebus(self.folder, function (err) {
+        test.ok(!err, 'should get rebus instance');
+        loaded = true;
+        test.deepEqual(rebusT.value, { b: { a: 2} });
+        rebusT.close();
+        complete();
+      });
+      setTimeout(function () {
+        test.ok(!loaded, 'the file is not complete, should be waiting for correct file');
+        value = '{ "a": 2 }';
+        fs.writeFile(path.join(self.folder, 'b.json'), value, function (err) {
+          test.ok(!err, 'should write full file');
+          complete();
+        });
+      }, 300);
+    });
   }
 });
