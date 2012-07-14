@@ -30,7 +30,7 @@ var bus = rebus(directoryName, function(err) {
   // The bus is initialized and includes current shared state.
   console.log('the entire shared state is:', bus.value);
   // Can start listening on changes for a particular object.
-  bus.subscribe('some.name.space.x.y.z', function(obj) {
+  var notification = bus.subscribe('some.name.space.x.y.z', function(obj) {
     // Got notification about object being changed by some publisher.
     console.log('some.name.space.x.y.z changed and its value is:', obj);
     console.log(
@@ -47,6 +47,9 @@ var bus = rebus(directoryName, function(err) {
        'published some other object and its value now:',
        bus.value.some.other.name.space);
   });
+  // Cleanup
+  notification.close();
+  bus.close();
 });
 ```
 Rebus can be instantiated and used synchronously:
@@ -59,7 +62,11 @@ console.log('the entire shared state is:', bus.value);
 // Write.
 bus.publish('x', { ... });
 // bus.value.x is not necessary the one assigned as not used in publish
-// completion. However, it is still can be used and it includes some value.
+// completion. However, it is still can be used and it includes some value
+// that was in x, before or after assignment.
+console.log('the value of x now:', bus.value.x);
+// Cleanup
+bus.close();
 ```
 
 Note: using rebus value or function before instantiation completion works,
