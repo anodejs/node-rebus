@@ -212,6 +212,57 @@ module.exports = testCase({
     });
   },
 
+  publishWithoutChange: function (test) {
+    var self = this;
+    var rebus1 = rebus(self.folder, function (err) {
+      test.ok(!err, 'failed to start empty instance');
+      test.ok(rebus1, 'got the 1st rebus instance');
+      var count1 = 0;
+      var count2 = 0;
+      var count3 = 0;
+      rebus1.subscribe('a.c', function (obj) {
+        if (obj.b === 'b') {
+          if (count1 === 0) {
+            // Publish the identical object.
+            rebus1.publish('a.c', { b: 'b' });
+          }
+          count1++;
+        }
+      });
+      var rebus2 = rebus(self.folder, function (err) {
+        test.ok(!err, 'failed to start empty instance');
+        test.ok(rebus2, 'got the 2nd rebus instance');
+        rebus2.subscribe('a.c', function (obj) {
+          if (obj.b === 'b') {
+            count2++;
+          }
+        });
+      });
+      var rebus3 = rebus(self.folder, function (err) {
+        test.ok(!err, 'failed to start empty instance');
+        test.ok(rebus3, 'got the 3rd rebus instance');
+        rebus3.subscribe('a', function (obj) {
+          if (obj.c && (obj.c.b === 'b')) {
+            count3++;
+          }
+        });
+      });
+
+      rebus1.publish('a.c', { b: 'b' });
+
+      setTimeout(function () {
+        // Only one notification should be received after all.
+        test.equal(count1, 1);
+        test.equal(count2, 1);
+        test.equal(count3, 1);
+        rebus1.close();
+        rebus2.close();
+        rebus3.close();
+        test.done();
+      }, 200);
+    });
+  },
+
   sync1: function (test) {
     var self = this;
     var rebus1 = rebus(self.folder, { singletons: false });
