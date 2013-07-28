@@ -263,6 +263,50 @@ module.exports = testCase({
     });
   },
 
+  modifyRebusObject: function (test) {
+    var self = this;
+    var rebus1 = rebus(self.folder, function (err) {
+      test.ok(!err, 'failed to start empty instance');
+      test.ok(rebus1, 'got the 1st rebus instance');
+      var count1 = 0;
+      var count2 = 0;
+      rebus1.subscribe('a.c', function (obj) {
+        console.log('rebus1 got', obj);
+        count1++;
+        if (obj.b === 'b') {
+          obj.b = 'x';
+          rebus1.publish('a.c', obj);
+        }
+      });
+
+      var rebus2 = rebus(self.folder, function (err) {
+        test.ok(!err, 'failed to start empty instance');
+        test.ok(rebus2, 'got the 2nd rebus instance');
+        rebus2.subscribe('a.c', function (obj) {
+          console.log('rebus2 got', obj);
+          count2++;
+          if (obj.b === 'x') {
+            var obj = rebus2.value.a.c;
+            obj['d'] = 'z';
+            rebus2.publish('a.c', obj); 
+          }
+        });
+      });
+
+      rebus1.publish('a.c', { b: 'b' });
+
+      setTimeout(function () {
+        test.deepEqual(rebus1.value.a.c, { b: 'x', d: 'z' });
+        test.deepEqual(rebus2.value.a.c, { b: 'x', d: 'z' });
+        test.equal(count1, 4); // one empty, one 'b', one 'x' and one with d.
+        test.equal(count2, 4); // one empty, one 'b', one 'x' and one with d.
+        rebus1.close();
+        rebus2.close();
+        test.done();
+      }, 200);
+    });
+  },
+
   sync1: function (test) {
     var self = this;
     var rebus1 = rebus(self.folder, { singletons: false });
