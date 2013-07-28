@@ -270,10 +270,13 @@ module.exports = testCase({
       test.ok(rebus1, 'got the 1st rebus instance');
       var count1 = 0;
       var count2 = 0;
+      var setx = true;
+      var setz = true;
       rebus1.subscribe('a.c', function (obj) {
         console.log('rebus1 got', obj);
         count1++;
-        if (obj.b === 'b') {
+        if (obj.b === 'b' && setx) {
+          setx = false;
           obj.b = 'x';
           rebus1.publish('a.c', obj);
         }
@@ -285,7 +288,8 @@ module.exports = testCase({
         rebus2.subscribe('a.c', function (obj) {
           console.log('rebus2 got', obj);
           count2++;
-          if (obj.b === 'x') {
+          if (obj.b === 'x' && setz) {
+            setz = false;
             var obj = rebus2.value.a.c;
             obj['d'] = 'z';
             rebus2.publish('a.c', obj); 
