@@ -4,7 +4,7 @@
   "main": "./main",
   "bin": {},
   "author": "yosefd <yosefd@microsoft.com>",
-  "version": "0.4.6",
+  "version": "0.4.7",
   "license": "MIT",
   "contributors": [
     "Yosef Dinerstein <yosefd@microsoft.com>",
@@ -26,8 +26,6 @@
   },
   "dependencies": {
     "async": "0.1.x",
-    "deep-equal": "0.0.x",
-    "clone": "0.1.x",
     "ypatterns": "0.2.x"
   },
   "devDependencies": {
