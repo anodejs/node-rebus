@@ -214,7 +214,7 @@ module.exports = testCase({
 
   publishWithoutChange: function (test) {
     var self = this;
-    var rebus1 = rebus(self.folder, function (err) {
+    var rebus1 = rebus(self.folder, { singletons: false }, function (err) {
       test.ok(!err, 'failed to start empty instance');
       test.ok(rebus1, 'got the 1st rebus instance');
       var count1 = 0;
@@ -229,7 +229,7 @@ module.exports = testCase({
           count1++;
         }
       });
-      var rebus2 = rebus(self.folder, function (err) {
+      var rebus2 = rebus(self.folder, { singletons: false }, function (err) {
         test.ok(!err, 'failed to start empty instance');
         test.ok(rebus2, 'got the 2nd rebus instance');
         rebus2.subscribe('a.c', function (obj) {
@@ -238,7 +238,7 @@ module.exports = testCase({
           }
         });
       });
-      var rebus3 = rebus(self.folder, function (err) {
+      var rebus3 = rebus(self.folder, { singletons: false }, function (err) {
         test.ok(!err, 'failed to start empty instance');
         test.ok(rebus3, 'got the 3rd rebus instance');
         rebus3.subscribe('a', function (obj) {
@@ -263,9 +263,9 @@ module.exports = testCase({
     });
   },
 
-  modifyRebusObject: function (test) {
+  modifyObject: function (test) {
     var self = this;
-    var rebus1 = rebus(self.folder, function (err) {
+    var rebus1 = rebus(self.folder, { singletons: false }, function (err) {
       test.ok(!err, 'failed to start empty instance');
       test.ok(rebus1, 'got the 1st rebus instance');
       var r1gotb = false;
@@ -298,7 +298,7 @@ module.exports = testCase({
         }
       });
 
-      var rebus2 = rebus(self.folder, function (err) {
+      var rebus2 = rebus(self.folder, { singletons: false }, function (err) {
         test.ok(!err, 'failed to start empty instance');
         test.ok(rebus2, 'got the 2nd rebus instance');
         rebus2.subscribe('a.c', function (obj) {
