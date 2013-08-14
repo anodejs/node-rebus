@@ -358,7 +358,7 @@ module.exports = testCase({
         rebus1.close();
         rebus2.close();
         test.done();
-      }, 200);
+      }, 400);
     });
   },
 
@@ -433,7 +433,13 @@ module.exports = testCase({
       var rebus2;
       try {
         rebus2 = rebus(self.folder, { singletons: false });
-        test.deepEqual(rebus2.value, { a: { b: { c1: 'x', c2: 'y'}} });
+        var data1 = JSON.stringify(rebus2.value);
+        var data2 = JSON.stringify({ a: { b: { c1: 'x', c2: 'y'}}});
+        if (data1 !== data2) {
+          // This instance of rebus is not ready
+          rebuses.push(rebus2);
+          return;
+        }
       }
       catch (e) {
         // No problem. More notifications will come.
@@ -442,6 +448,7 @@ module.exports = testCase({
         rebuses.push(rebus2);
         return;
       }
+      test.deepEqual(rebus2.value, { a: { b: { c1: 'x', c2: 'y'}} });
       // If got here, rebus should be loaded successfully.
       notification1.close();
       rebus1.close();
