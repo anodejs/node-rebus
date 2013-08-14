@@ -296,7 +296,7 @@ module.exports = testCase({
         rebus2.close();
         rebus3.close();
         test.done();
-      }, 200);
+      }, 400);
     });
   },
 
