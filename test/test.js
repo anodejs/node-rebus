@@ -212,6 +212,43 @@ module.exports = testCase({
     });
   },
 
+  initialNotification: function(test) {
+    var self = this;
+    var countOuter = 0;
+    var countInner = 0;
+    function cleanup() {
+      if (countInner + countOuter === 3) {
+        rebusT.close();
+        test.done();
+      }
+    }
+    var rebusT = rebus(self.folder, function (err) {
+      // Subscription berfore publish completion.
+      // Should notify twice: initial and change.
+      rebusT.subscribe('a', function(obj) {
+        test.ok(countOuter < 2, 'Outer notification should come twice');
+        if (countOuter === 0) {
+          test.deepEqual(obj, {});
+        }
+        else if (countOuter === 1) {
+          test.deepEqual(obj, { b: 'b'});
+        }
+        countOuter++;
+        cleanup();
+      });
+      rebusT.publish('a', { b: 'b'}, function() {
+        // Subcription from publish completion.
+        // Should notify only once: initial.
+        rebusT.subscribe('a', function(obj) {
+          test.ok(countInner < 1, 'Inner notification should come once');
+          test.deepEqual(obj, { b: 'b'});
+          countInner++;
+          cleanup();
+        });
+      });
+    });
+  },
+
   publishWithoutChange: function (test) {
     var self = this;
     var rebus1 = rebus(self.folder, { singletons: false }, function (err) {
