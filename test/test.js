@@ -306,9 +306,7 @@ module.exports = testCase({
       test.ok(!err, 'failed to start empty instance');
       test.ok(rebus1, 'got the 1st rebus instance');
       var r1gotb = false;
-      var r1gotx = false;
       var r1gotz = false;
-      var r2gotb = false;
       var r2gotx = false;
       var r2gotz = false;
       // Number of notification may vary depending on file system behavior
@@ -327,9 +325,6 @@ module.exports = testCase({
           obj.b = 'x';
           rebus1.publish('a.c', obj);
         }
-        if (obj.b === 'x') {
-          r1gotx = true;
-        }
         if (obj.d === 'z') {
           r1gotz = true;
         }
@@ -340,9 +335,6 @@ module.exports = testCase({
         test.ok(rebus2, 'got the 2nd rebus instance');
         rebus2.subscribe('a.c', function (obj) {
           console.log('rebus2 got', obj);
-          if (obj.b === 'b') {
-            r2gotb = true;
-          }
           if (obj.b === 'x') {
             r2gotx = true;
             var obj = rebus2.value.a.c;
@@ -360,8 +352,8 @@ module.exports = testCase({
       setTimeout(function () {
         test.deepEqual(rebus1.value.a.c, { b: 'x', d: 'z' });
         test.deepEqual(rebus2.value.a.c, { b: 'x', d: 'z' });
-        test.ok(r1gotb && r2gotb);
-        test.ok(r1gotx && r2gotx);
+        test.ok(r1gotb);
+        test.ok(r2gotx);
         test.ok(r1gotz && r2gotz);
         rebus1.close();
         rebus2.close();
