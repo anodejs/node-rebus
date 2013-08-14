@@ -25,7 +25,7 @@
     "node": "~0.10.x"
   },
   "dependencies": {
-    "async": "0.1.x",
+    "async": "0.2.x",
     "ypatterns": "0.2.x"
   },
   "devDependencies": {
