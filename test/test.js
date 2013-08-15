@@ -300,7 +300,7 @@ module.exports = testCase({
     });
   },
 
-  modifyObject: function (test) {
+  modifyObject1: function (test) {
     var self = this;
     var rebus1 = rebus(self.folder, { singletons: false }, function (err) {
       test.ok(!err, 'failed to start empty instance');
@@ -359,6 +359,34 @@ module.exports = testCase({
         rebus2.close();
         test.done();
       }, 400);
+    });
+  },
+
+  modifyObject2: function (test) {
+    var self = this;
+    var rebusT = rebus(self.folder, { singletons: false }, function (err) {
+      test.ok(!err, 'failed to start empty instance');
+      test.ok(rebusT, 'got the 1st rebus instance');
+      rebusT.publish('a', { b: 0, c: 0}, function(err) {
+        test.ok(!err, 'failed with 1st publish');
+        test.deepEqual(rebusT.value.a, { b: 0, c: 0 });
+        var obj = rebusT.value.a;
+        obj.b = 1;
+        rebusT.publish('a', obj, function(err) {
+          test.ok(!err, 'failed with 2nd publish');
+          console.log('YYYY completion publish b', rebusT.value.a);
+        });
+        console.log('YYYY after set to b', rebusT.value.a);
+        process.nextTick(function() {
+          obj.c = 1;
+          console.log('YYYY after set to c', rebusT.value.a);
+          setTimeout(function () {
+            console.log('YYYY after timeout', rebusT.value.a);
+            rebusT.close();
+            test.done();
+          }, 200);
+        });
+      });
     });
   },
 
