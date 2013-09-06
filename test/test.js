@@ -3,12 +3,13 @@ var path = require('path');
 var rimraf = require('rimraf');
 var mkdirp = require('mkdirp');
 var fs = require('fs');
+var os = require('os');
 var rebus = require('../lib/rebus');
 
 module.exports = testCase({
 
   setUp: function (callback) {
-    this.folder = path.join(process.env.TMP || process.env.TMPDIR, 'rebus', Math.round(Math.random() * 100000).toString());
+    this.folder = path.join(process.env.TMP || process.env.TMPDIR || os.tmpdir(), 'rebus', Math.round(Math.random() * 100000).toString());
     console.log('Folder:' + this.folder);
     mkdirp(this.folder, callback);
   },
