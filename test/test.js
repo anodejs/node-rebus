@@ -454,5 +454,36 @@ module.exports = testCase({
         });
       }, 300);
     });
+  },
+
+  ignoreDotFilesDuringInitalLoad: function (test) {
+    var self = this;    
+    fs.writeFile(path.join(self.folder, '.c.json'), 'something', function (err) {
+      test.ok(!err, 'should write dot file');
+      var rebusT = rebus(self.folder, function (err) {
+        test.ok(!err, 'should get rebus instance');
+        test.deepEqual(rebusT.value, { });
+        rebusT.close();
+        test.done();
+      });
+    });
+  },
+
+  ignoreDotFilesOnUpdate: function (test) {
+    var self = this;
+    fs.writeFile(path.join(self.folder, '.c.json'), 'something', function (err) {
+      test.ok(!err, 'should write dot file');
+      var rebusT = rebus(self.folder, function (err) {
+        test.ok(!err, 'should get rebus instance');
+        fs.writeFile(path.join(self.folder, '.c.json'), '{}', function (err) {
+          test.ok(!err, 'should write full file');
+          setTimeout(function () {
+            test.deepEqual(rebusT.value, { });
+            rebusT.close();
+            test.done();
+          }, 300);
+        });
+      });
+    });
   }
 });
