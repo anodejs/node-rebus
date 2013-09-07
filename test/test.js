@@ -3,12 +3,13 @@ var path = require('path');
 var rimraf = require('rimraf');
 var mkdirp = require('mkdirp');
 var fs = require('fs');
+var os = require('os');
 var rebus = require('../lib/rebus');
 
 module.exports = testCase({
 
   setUp: function (callback) {
-    this.folder = path.join(process.env.TMP || process.env.TMPDIR, 'rebus', Math.round(Math.random() * 100000).toString());
+    this.folder = path.join(process.env.TMP || process.env.TMPDIR || os.tmpdir(), 'rebus', Math.round(Math.random() * 100000).toString());
     console.log('Folder:' + this.folder);
     mkdirp(this.folder, callback);
   },
@@ -471,6 +472,37 @@ module.exports = testCase({
           complete();
         });
       }, 300);
+    });
+  },
+
+  ignoreDotFilesDuringInitalLoad: function (test) {
+    var self = this;    
+    fs.writeFile(path.join(self.folder, '.c.json'), 'something', function (err) {
+      test.ok(!err, 'should write dot file');
+      var rebusT = rebus(self.folder, function (err) {
+        test.ok(!err, 'should get rebus instance');
+        test.deepEqual(rebusT.value, { });
+        rebusT.close();
+        test.done();
+      });
+    });
+  },
+
+  ignoreDotFilesOnUpdate: function (test) {
+    var self = this;
+    fs.writeFile(path.join(self.folder, '.c.json'), 'something', function (err) {
+      test.ok(!err, 'should write dot file');
+      var rebusT = rebus(self.folder, function (err) {
+        test.ok(!err, 'should get rebus instance');
+        fs.writeFile(path.join(self.folder, '.c.json'), '{}', function (err) {
+          test.ok(!err, 'should write full file');
+          setTimeout(function () {
+            test.deepEqual(rebusT.value, { });
+            rebusT.close();
+            test.done();
+          }, 300);
+        });
+      });
     });
   }
 });
