@@ -4,7 +4,7 @@
   "main": "./main",
   "bin": {},
   "author": "yosefd <yosefd@microsoft.com>",
-  "version": "0.4.7",
+  "version": "0.4.8",
   "license": "MIT",
   "contributors": [
     "Yosef Dinerstein <yosefd@microsoft.com>",
@@ -22,10 +22,10 @@
     "consumer"
   ],
   "engines": {
-    "node": "~0.6.x"
+    "node": "~0.10.x"
   },
   "dependencies": {
-    "async": "0.1.x",
+    "async": "0.2.x",
     "ypatterns": "0.2.x"
   },
   "devDependencies": {

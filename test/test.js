@@ -9,7 +9,7 @@ var rebus = require('../lib/rebus');
 module.exports = testCase({
 
   setUp: function (callback) {
-    this.folder = path.join(process.env.TMP || process.env.TMPDIR || os.tmpdir(), 'rebus', Math.round(Math.random() * 100000).toString());
+    this.folder = path.join(process.env.TMP || process.env.TMPDIR, 'rebus', Date.now().toString());
     console.log('Folder:' + this.folder);
     mkdirp(this.folder, callback);
   },
@@ -30,7 +30,7 @@ module.exports = testCase({
   // Just adhoc scenario used during development.
   adhoc: function (test) {
     var self = this;
-    var rebus1 = rebus(self.folder, { singletons: false }, function (err) {
+    var rebus1 = rebus(self.folder, { singletons: true }, function (err) {
       console.log('started rebus1');
       test.ok(!err, 'failed to start the 1st rebus instance');
       if (!rebus1) {
@@ -63,7 +63,7 @@ module.exports = testCase({
             xkaf1 = obj;
           });
           // start again and see the published object in there.
-          var rebus2 = rebus(self.folder, { singletons: false }, function (err) {
+          var rebus2 = rebus(self.folder, { singletons: true }, function (err) {
             console.log('started rebus2');
             test.ok(!err, 'cannot start another instance of rebus');
             console.log('going to change x.k.a');
@@ -213,6 +213,44 @@ module.exports = testCase({
     });
   },
 
+  initialNotification: function(test) {
+    var self = this;
+    var countOuter = 0;
+    var countInner = 0;
+    function cleanup() {
+      if (countInner + countOuter === 3) {
+        rebusT.close();
+        test.done();
+      }
+    }
+    var rebusT = rebus(self.folder, function (err) {
+      // Subscription berfore publish completion.
+      // Should notify twice: initial and change.
+      rebusT.subscribe('a', function(obj) {
+        test.ok(countOuter < 2, 'Outer notification should come twice');
+        if (countOuter === 0) {
+          test.deepEqual(obj, {});
+        }
+        else if (countOuter === 1) {
+          test.deepEqual(obj, { b: 'b'});
+        }
+        countOuter++;
+        cleanup();
+      });
+      rebusT.publish('a', { b: 'b'}, function() {
+        // Subcription from publish completion.
+        // Should notify only once: initial.
+        rebusT.subscribe('a', function(obj) {
+          test.ok(countInner < 1, 'Inner notification should come once');
+          test.deepEqual(obj, { b: 'b'});
+          countInner++;
+          cleanup();
+        });
+      });
+    });
+  },
+
+  // If no change, no notification should be issued.
   publishWithoutChange: function (test) {
     var self = this;
     var rebus1 = rebus(self.folder, { singletons: false }, function (err) {
@@ -260,77 +298,36 @@ module.exports = testCase({
         rebus2.close();
         rebus3.close();
         test.done();
-      }, 200);
+      }, 400);
     });
   },
 
+  // Modifications can be applied to the rebus object itself and they are kept.
   modifyObject: function (test) {
     var self = this;
-    var rebus1 = rebus(self.folder, { singletons: false }, function (err) {
+    var rebusT = rebus(self.folder, { singletons: false }, function (err) {
       test.ok(!err, 'failed to start empty instance');
-      test.ok(rebus1, 'got the 1st rebus instance');
-      var r1gotb = false;
-      var r1gotx = false;
-      var r1gotz = false;
-      var r2gotb = false;
-      var r2gotx = false;
-      var r2gotz = false;
-      // Number of notification may vary depending on file system behavior
-      // One possible scenario:
-      // 1. Notification for setting b arrives
-      // 2. x is published
-      // 3. Notification for x arrives
-      // 4. Changes in monitored file trigger notification for setting b again
-      // 5. Changed in file notify on setting x
-      // So instead of getting just 2 notifications, 4 may arrive.
-      // However, eventual consistency is garanteered.
-      rebus1.subscribe('a.c', function (obj) {
-        console.log('rebus1 got', obj);
-        if (obj.b === 'b') {
-          r1gotb = true;
-          obj.b = 'x';
-          rebus1.publish('a.c', obj);
-        }
-        if (obj.b === 'x') {
-          r1gotx = true;
-        }
-        if (obj.d === 'z') {
-          r1gotz = true;
-        }
-      });
-
-      var rebus2 = rebus(self.folder, { singletons: false }, function (err) {
-        test.ok(!err, 'failed to start empty instance');
-        test.ok(rebus2, 'got the 2nd rebus instance');
-        rebus2.subscribe('a.c', function (obj) {
-          console.log('rebus2 got', obj);
-          if (obj.b === 'b') {
-            r2gotb = true;
-          }
-          if (obj.b === 'x') {
-            r2gotx = true;
-            var obj = rebus2.value.a.c;
-            obj['d'] = 'z';
-            rebus2.publish('a.c', obj); 
-          }
-          if (obj.d === 'z') {
-            r2gotz = true;
-          }
+      test.ok(rebusT, 'got the 1st rebus instance');
+      rebusT.publish('a', { b: 0, c: 0}, function(err) {
+        test.ok(!err, 'failed with 1st publish');
+        test.deepEqual(rebusT.value.a, { b: 0, c: 0 });
+        var obj = rebusT.value.a;
+        obj.b = 1;
+        rebusT.publish('a', obj, function(err) {
+          test.ok(!err, 'failed with 2nd publish');
+        });
+        test.deepEqual(rebusT.value.a, { b: 1, c: 0 });
+        process.nextTick(function() {
+          obj.c = 1;
+          test.deepEqual(rebusT.value.a, { b: 1, c: 1 });
+          setTimeout(function () {
+            // Even not published, the state remains as set.
+            test.deepEqual(rebusT.value.a, { b: 1, c: 1 });
+            rebusT.close();
+            test.done();
+          }, 200);
         });
       });
-
-      rebus1.publish('a.c', { b: 'b' });
-
-      setTimeout(function () {
-        test.deepEqual(rebus1.value.a.c, { b: 'x', d: 'z' });
-        test.deepEqual(rebus2.value.a.c, { b: 'x', d: 'z' });
-        test.ok(r1gotb && r2gotb);
-        test.ok(r1gotx && r2gotx);
-        test.ok(r1gotz && r2gotz);
-        rebus1.close();
-        rebus2.close();
-        test.done();
-      }, 200);
     });
   },
 
@@ -397,34 +394,56 @@ module.exports = testCase({
 
   // Should be a notification when the rebus in consistent state, even there are some
   // notifications while the state is transient.
-  consistentNotificaiton: function (test) {
+  eventualConsistency1: function (test) {
+    var self = this;
+    var rebus1 = rebus(self.folder, { singletons: false });
+    var rebus2 = rebus(self.folder, { singletons: false });
+    var count = 0;
+    rebus1.subscribe('a', function(obj) {
+      if (obj.b) {
+        test.deepEqual(rebus1.value, { a: { b: { c1: 'x', c2: 'y'}}});
+        count++;
+      }
+    });
+    rebus2.subscribe('a', function(obj) {
+      if (obj.b) {
+        test.deepEqual(rebus2.value, { a: { b: { c1: 'x', c2: 'y'}}});
+        count++;
+      }
+    });
+    rebus1.publish('a.b', { c1: 'x', c2: 'y' });
+    setTimeout(function() {
+      test.equal(count, 2);
+      rebus1.close();
+      rebus2.close();
+      test.done();
+    }, 200);
+  },
+
+  // Another rebus should pick up the published change.
+  eventualConsistency2: function (test) {
     var self = this;
     var rebus1 = rebus(self.folder, { singletons: false });
     var rebuses = [];
-    var notification1 = rebus1.subscribe('a', function (obj) {
-      var rebus2;
-      try {
-        rebus2 = rebus(self.folder, { singletons: false });
-        test.deepEqual(rebus2.value, { a: { b: { c1: 'x', c2: 'y'}} });
-      }
-      catch (e) {
-        // No problem. More notifications will come.
-        console.log('exception on instantiating sync rebus:', e);
-        // This instance of rebus was not loaded. Save it, to close later.
+    var timer = setInterval(function(){
+      var rebus2 = rebus(self.folder, { singletons: false });
+      var data1 = JSON.stringify(rebus2.value);
+      var data2 = JSON.stringify({ a: { b: { c1: 'x', c2: 'y'}}});
+      if (data1 !== data2) {
+        // This instance of rebus is not ready yet
         rebuses.push(rebus2);
         return;
       }
-      // If got here, rebus should be loaded successfully.
-      notification1.close();
+      test.deepEqual(rebus2.value, { a: { b: { c1: 'x', c2: 'y'}}});
+      // Eventual match
+      clearInterval(timer);
       rebus1.close();
       rebus2.close();
-      // Close all instances that failed to initialize due to transient state.
-      // They can be initialized without exception now.
       rebuses.forEach(function (r) { r.close(); });
       test.done();
-    });
+    }, 100);
     rebus1.publish('a.b', { c1: 'x', c2: 'y' });
-  },
+  },  
 
   loaderIncompleteFile: function (test) {
     var self = this;
